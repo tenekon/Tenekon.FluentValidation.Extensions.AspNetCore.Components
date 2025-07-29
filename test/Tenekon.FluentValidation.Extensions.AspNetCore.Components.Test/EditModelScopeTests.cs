@@ -1,4 +1,5 @@
-﻿using Bunit;
+﻿using System.Linq.Expressions;
+using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Shouldly;
@@ -110,5 +111,69 @@ public class EditModelScopeTests : TestContext
         cut.Instance.AncestorEditContext.ShouldBeSameAs(editContext1);
         var actorEditContext2 = cut.Instance.ActorEditContext;
         actorEditContext2.ShouldBeSameAs(actorEditContext1);
+    }
+
+    [Fact]
+    public void CustomValidatorMessageStore_AssociatedToIsolatedEditContext_AddingMessage_ValidationFails()
+    {
+        var model = new Model();
+        var editContext1 = new EditContext(model);
+
+        var cascadingEditForm = RenderComponent<CascadingValue<EditContext>>(p => {
+            p.Add(x => x.Value, editContext1);
+            p.Add(x => x.IsFixed, value: false);
+            p.AddChildContent<EditModelScope>(p2 => p2.AddChildContent<CustomValidatoreMessageStoreOwningComponent>());
+        });
+
+        var cut = cascadingEditForm.FindComponent<EditModelScope>();
+        var validationMessageStoreAccessor = cascadingEditForm.FindComponent<CustomValidatoreMessageStoreOwningComponent>();
+        
+        validationMessageStoreAccessor.Instance.Add(() => model.Hello, "VALIDATION FAILURE REASON");
+        
+        cut.Instance.ActorEditContext.GetValidationMessages().Count().ShouldBe(1);
+        editContext1.GetValidationMessages().Count().ShouldBe(1);
+    }
+
+    private class CustomValidatoreMessageStoreOwningComponent : IComponent
+    {
+        private RenderHandle _renderHandle;
+        private ValidationMessageStore? _validationMessageStore;
+
+        [CascadingParameter]
+        public EditContext? AncestorEditContext { get; set; }
+
+        void IComponent.Attach(RenderHandle renderHandle) => _renderHandle = renderHandle;
+
+        Task IComponent.SetParametersAsync(ParameterView parameters)
+        {
+            parameters.SetParameterProperties(this);
+            var editContext = AncestorEditContext ?? throw new InvalidOperationException();
+            _validationMessageStore ??= new ValidationMessageStore(editContext);
+            return Task.CompletedTask;
+        }
+
+        public void Clear()
+        {
+            if (_validationMessageStore is null) {
+                throw new InvalidOperationException();
+            }
+            _validationMessageStore.Clear();
+        }
+
+        public void Add(in FieldIdentifier fieldIdentifier, string message)
+        {
+            if (_validationMessageStore is null) {
+                throw new InvalidOperationException();
+            }
+            _validationMessageStore.Add(fieldIdentifier, message);
+        }
+
+        public void Add<TField>(Expression<Func<TField>> fieldIdentifier, string message)
+        {
+            if (_validationMessageStore is null) {
+                throw new InvalidOperationException();
+            }
+            _validationMessageStore.Add(FieldIdentifier.Create(fieldIdentifier), message);
+        }
     }
 }
