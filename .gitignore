@@ -400,3 +400,8 @@ FodyWeavers.xsd
 
 # Verify
 *.received.*
+
+.ai
+.codex
+.mcp
+
