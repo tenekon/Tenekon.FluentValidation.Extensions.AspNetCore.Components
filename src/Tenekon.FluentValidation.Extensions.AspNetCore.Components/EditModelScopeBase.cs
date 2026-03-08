@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Tenekon.FluentValidation.Extensions.AspNetCore.Components.Interception.Accessors;
 
 namespace Tenekon.FluentValidation.Extensions.AspNetCore.Components;
 
@@ -21,7 +22,7 @@ public abstract class EditModelScopeBase<TDerived> : EditContextualComponentBase
         TDerived.ParameterSetTransitionHandlerRegistry.RemoveHandler(RefreshRootEditContextEventBindings);
 
         TDerived.ParameterSetTransitionHandlerRegistry.RegisterHandler(
-            SetIsolatedActorEditContextAction,
+            SetIsolatedActorEditContext,
             // ISSUE:
             //  The problem is, that root edit context may become the ancestor edit context, then the ancestor edit references of
             //  field states and properties are copied to new actor edit context, thus it is problematic to occupy counter-based
@@ -36,7 +37,7 @@ public abstract class EditModelScopeBase<TDerived> : EditContextualComponentBase
             SetProvidedEditContexts);
     }
 
-    internal static Action<EditContextualComponentBaseParameterSetTransition> SetIsolatedActorEditContextAction { get; } =
+    internal static Action<EditContextualComponentBaseParameterSetTransition> SetIsolatedActorEditContext { get; } =
         static transition => {
             if (transition.IsDisposing) {
                 return;
@@ -59,7 +60,7 @@ public abstract class EditModelScopeBase<TDerived> : EditContextualComponentBase
                     // Only copy field references if the ancestor is the direct ancestor.
                     if (component.Ancestor is { IsDirectAncestor: true }) {
                         // Cascade EditContext._fieldStates
-                        var editContextFieldStatesMemberAccessor = EditContextAccessor.EditContextFieldStatesMemberAccessor;
+                        var editContextFieldStatesMemberAccessor = EditContextAccessor.EditContextFieldStateMapMember;
                         var fieldStates = editContextFieldStatesMemberAccessor.GetValue(ancestorEditContextTransition.New);
                         editContextFieldStatesMemberAccessor.SetValue(newActorEditContext, fieldStates);
 
@@ -68,7 +69,7 @@ public abstract class EditModelScopeBase<TDerived> : EditContextualComponentBase
                             EditContextAccessor.GetProperties(ancestorEditContextTransition.New);
                     } /* else:
                        * We MUST NOT cascade field states and properties, because we do not want to have shared field states,
-                       * between different validation contexts, so it becomes like this:
+                       * between different validation contexts to have the following behaviour:
                        * <EditForm ...> Context A
                        *   <EditModelScope> // Context B - for demonstation purposes
                        *     <EditModelValidatorRootpath .../> // Writes to A & B

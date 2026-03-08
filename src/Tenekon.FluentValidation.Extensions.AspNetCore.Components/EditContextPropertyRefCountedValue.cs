@@ -7,8 +7,8 @@ namespace Tenekon.FluentValidation.Extensions.AspNetCore.Components;
 /// 
 /// </summary>
 /// <param name="key">Must be unique across</param>
-/// <typeparam name="T"></typeparam>
-internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(object key) where T : class
+/// <typeparam name="TValue"></typeparam>
+internal readonly struct EditContextPropertyRefCountedValue<TValue>(object key) where TValue : class
 {
     private static PropertyValue GetPropertyValue(object originalPropertyValue)
     {
@@ -25,7 +25,7 @@ internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(ob
         return propertyValue;
     }
 
-    public bool TryGetPropertyValue(EditContext owner, [NotNullWhen(returnValue: true)] out T? value)
+    public bool TryGetPropertyValue(EditContext owner, [NotNullWhen(returnValue: true)] out TValue? value)
     {
         if (!owner.Properties.TryGetValue(key, out var originalPropertyValue)) {
             value = null;
@@ -37,7 +37,7 @@ internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(ob
         return true;
     }
 
-    internal bool TryGetPropertyValue(EditContext owner, [NotNullWhen(returnValue: true)] out T? value, out int counter)
+    internal bool TryGetPropertyValue(EditContext owner, [NotNullWhen(returnValue: true)] out TValue? value, out int counter)
     {
         if (!owner.Properties.TryGetValue(key, out var originalPropertyValue)) {
             value = null;
@@ -51,7 +51,7 @@ internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(ob
         return true;
     }
 
-    public void OccupyProperty(EditContext owner, T value)
+    public int OccupyProperty(EditContext owner, TValue value)
     {
         if (owner.Properties.TryGetValue(key, out var originalPropertyValue)) {
             var propertyValue = GetPropertyValue(originalPropertyValue);
@@ -61,14 +61,14 @@ internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(ob
                     "A property with the same key and type exists, but its inner value is a different reference than the given value.");
             }
 
-            propertyValue.Counter++;
-            return;
+            return ++propertyValue.Counter;
         }
 
         owner.Properties[key] = new PropertyValue(value, counter: 1);
+        return 1;
     }
 
-    public void DisoccupyProperty(EditContext owner)
+    public int DisoccupyProperty(EditContext owner)
     {
         if (!owner.Properties.TryGetValue(key, out var originalPropertyValue)) {
             throw new InvalidOperationException($"A property with the key {key} does not exist");
@@ -77,15 +77,16 @@ internal readonly struct CounterBasedEditContextPropertyClassValueAccessor<T>(ob
         var propertyValue = GetPropertyValue(originalPropertyValue);
 
         if (--propertyValue.Counter > 0) {
-            return;
+            return propertyValue.Counter;
         }
 
         owner.Properties.Remove(key);
+        return 0;
     }
 
-    private class PropertyValue(T value, int counter)
+    private class PropertyValue(TValue value, int counter)
     {
-        public T Value { get; set; } = value;
+        public TValue Value { get; set; } = value;
         internal int Counter { get; set; } = counter;
     }
 }

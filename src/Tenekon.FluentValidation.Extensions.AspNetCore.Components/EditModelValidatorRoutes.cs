@@ -17,7 +17,7 @@ public class EditModelValidatorRoutes : EditModelScopeBase<EditModelValidatorRou
     {
         RuntimeHelpers.RunClassConstructor(typeof(EditModelScopeBase<EditModelValidatorRoutes>).TypeHandle);
 
-        ParameterSetTransitionHandlerRegistryProvider<EditModelValidatorRoutes>.ParameterSetTransitionHandlerRegistry.RegisterHandler(
+        ParameterSetTransitionHandlerRegistryAccessor<EditModelValidatorRoutes>.ParameterSetTransitionHandlerRegistry.RegisterHandler(
             SetRoutesOwningEditModelValidationNotifier,
             HandlerInsertPosition.After);
     }

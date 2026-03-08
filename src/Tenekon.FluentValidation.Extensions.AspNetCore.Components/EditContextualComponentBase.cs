@@ -62,7 +62,7 @@ public abstract class EditContextualComponentBase<TDerived> : ComponentBase, IEd
         if (areActorEditContextAndAncestorEditContextEqual) {
             rootEditContext = ancestorEditContext;
         } else {
-            if (EditContextPropertyAccessor.s_rootEditContext.TryGetPropertyValue(ancestorEditContext, out var rootEditContext2)) {
+            if (EditContextPropertyAccessor.s_rootEditContextProperty.TryGetPropertyValue(ancestorEditContext, out var rootEditContext2)) {
                 rootEditContext = rootEditContext2;
             } else {
                 rootEditContext = ancestorEditContext;
@@ -137,13 +137,24 @@ public abstract class EditContextualComponentBase<TDerived> : ComponentBase, IEd
         if (transition.ActorEditContext.IsNewDifferent || transition.RootEditContext.IsNewDifferent) {
             // TODO: && IsFirstTransition: false?
             if (transition.ActorEditContext is { IsOldNonNull: true }) {
-                EditContextPropertyAccessor.s_rootEditContext.DisoccupyProperty(transition.ActorEditContext.Old);
+                if (transition.RootEditContext.IsOldNonNull) {
+                    EditContextLifecycleTrace.Emit(
+                        EditContextLifecycleTraceEventKind.RootPropertyDisoccupy,
+                        transition.RootEditContext.Old,
+                        transition.ActorEditContext.Old);
+                }
+
+                EditContextPropertyAccessor.s_rootEditContextProperty.DisoccupyProperty(transition.ActorEditContext.Old);
             }
 
             if (transition.ActorEditContext.IsNewNonNull && transition.RootEditContext.IsNewNonNull) {
-                EditContextPropertyAccessor.s_rootEditContext.OccupyProperty(
+                EditContextPropertyAccessor.s_rootEditContextProperty.OccupyProperty(
                     transition.ActorEditContext.New,
                     transition.RootEditContext.New);
+                EditContextLifecycleTrace.Emit(
+                    EditContextLifecycleTraceEventKind.RootPropertyOccupy,
+                    transition.RootEditContext.New,
+                    transition.ActorEditContext.New);
             }
         }
     };

@@ -4,7 +4,7 @@ namespace Tenekon.FluentValidation.Extensions.AspNetCore.Components;
 
 public class PublicApiTests
 {
-    [Fact(Skip = "Too noisy")]
+    [Fact]
     public Task FluentValidationComponentsPublicApi_HasNoChanges()
     {
         var publicApi = typeof(EditContextualComponentBase<>).Assembly.GeneratePublicApi(

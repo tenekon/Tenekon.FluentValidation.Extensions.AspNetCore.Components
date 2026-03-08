@@ -44,8 +44,8 @@ public class EditModelScopeTests : TestContext
         cut.Instance.ActorEditContext.ShouldNotBeSameAs(editContext);
         cut.Instance.ActorEditContext.Model.ShouldBeSameAs(editContext.Model);
         EditContextAccessor.GetProperties(cut.Instance.ActorEditContext).ShouldNotBeSameAs(editContext.Properties);
-        EditContextAccessor.EditContextFieldStatesMemberAccessor.GetValue(cut.Instance.ActorEditContext)
-            .ShouldNotBeSameAs(EditContextAccessor.EditContextFieldStatesMemberAccessor.GetValue(editContext));
+        EditContextAccessor.EditContextFieldStateMapMember.GetValue(cut.Instance.ActorEditContext)
+            .ShouldNotBeSameAs(EditContextAccessor.EditContextFieldStateMapMember.GetValue(editContext));
     }
 
     [Fact]
@@ -112,37 +112,36 @@ public class EditModelScopeTests : TestContext
         var actorEditContext2 = cut.Instance.ActorEditContext;
         actorEditContext2.ShouldBeSameAs(actorEditContext1);
     }
-
+    
     [Fact]
     public void CustomValidatorMessageStore_AssociatedToIsolatedEditContext_AddingMessage_ValidationFails()
     {
         var model = new Model();
-        var editContext1 = new EditContext(model);
+        var editContext = new EditContext(model);
 
         var cascadingEditForm = RenderComponent<CascadingValue<EditContext>>(p => {
-            p.Add(x => x.Value, editContext1);
+            p.Add(x => x.Value, editContext);
             p.Add(x => x.IsFixed, value: false);
             p.AddChildContent<EditModelScope>(p2 => p2.AddChildContent<CustomValidatoreMessageStoreOwningComponent>());
         });
 
         var cut = cascadingEditForm.FindComponent<EditModelScope>();
         var validationMessageStoreAccessor = cascadingEditForm.FindComponent<CustomValidatoreMessageStoreOwningComponent>();
-        
-        validationMessageStoreAccessor.Instance.Add(() => model.Hello, "VALIDATION FAILURE REASON");
-        
+
+        validationMessageStoreAccessor.Instance.Add(() => model.Field1, "VALIDATION FAILURE REASON");
+
         cut.Instance.ActorEditContext.GetValidationMessages().Count().ShouldBe(1);
-        editContext1.GetValidationMessages().Count().ShouldBe(1);
+        editContext.GetValidationMessages().Count().ShouldBe(1);
     }
 
     private class CustomValidatoreMessageStoreOwningComponent : IComponent
     {
-        private RenderHandle _renderHandle;
         private ValidationMessageStore? _validationMessageStore;
 
         [CascadingParameter]
         public EditContext? AncestorEditContext { get; set; }
 
-        void IComponent.Attach(RenderHandle renderHandle) => _renderHandle = renderHandle;
+        void IComponent.Attach(RenderHandle renderHandle) { }
 
         Task IComponent.SetParametersAsync(ParameterView parameters)
         {

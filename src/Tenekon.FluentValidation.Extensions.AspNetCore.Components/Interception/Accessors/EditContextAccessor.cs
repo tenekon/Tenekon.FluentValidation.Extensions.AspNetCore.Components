@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Components.Forms;
 
-namespace Tenekon.FluentValidation.Extensions.AspNetCore.Components;
+namespace Tenekon.FluentValidation.Extensions.AspNetCore.Components.Interception.Accessors;
 
 internal static class EditContextAccessor
 {
@@ -12,7 +12,8 @@ internal static class EditContextAccessor
     // We cannot use UnsafeAccessor and must work with reflection because part of the targeting signature is internal. :/
     [field: AllowNull]
     [field: MaybeNull]
-    public static FieldInfo EditContextFieldStatesMemberAccessor =>
+    [field: DynamicDependency(DynamicallyAccessedMemberTypes.NonPublicFields, typeof(EditContext))]
+    public static FieldInfo EditContextFieldStateMapMember =>
         field ??= typeof(EditContext).GetField(EditContextFieldStatesFieldName, BindingFlags.Instance | BindingFlags.NonPublic) ??
             throw new NotImplementedException(
                 $"{nameof(EditContext)} does not implement the {EditContextFieldStatesFieldName} field anymore.");

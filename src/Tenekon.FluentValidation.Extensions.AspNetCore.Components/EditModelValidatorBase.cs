@@ -266,7 +266,7 @@ public abstract class EditModelValidatorBase<TDerived> : EditContextualComponent
         candidate.IsWithinScope =
             (LastParameterSetTransition.RootEditContext.TryGetNew(out var rootEditContext) &&
                 ReferenceEquals(rootEditContext, candidate.EditContext)) ||
-            (EditContextPropertyAccessor.s_rootEditContext.TryGetPropertyValue(candidate.EditContext, out var candidateRootEditContext) &&
+            (EditContextPropertyAccessor.s_rootEditContextProperty.TryGetPropertyValue(candidate.EditContext, out var candidateRootEditContext) &&
                 ReferenceEquals(rootEditContext, candidateRootEditContext));
 
     private void ClearValidationMessageStores()

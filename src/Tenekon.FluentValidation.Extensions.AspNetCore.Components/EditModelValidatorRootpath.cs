@@ -10,7 +10,7 @@ public class EditModelValidatorRootpath : EditModelValidatorBase<EditModelValida
     {
         RuntimeHelpers.RunClassConstructor(typeof(EditModelValidatorBase<EditModelValidatorRootpath>).TypeHandle);
 
-        ParameterSetTransitionHandlerRegistryProvider<EditModelValidatorRootpath>.ParameterSetTransitionHandlerRegistry.RegisterHandler(
+        ParameterSetTransitionHandlerRegistryAccessor<EditModelValidatorRootpath>.ParameterSetTransitionHandlerRegistry.RegisterHandler(
             CopyAncestorEditContextFieldReferencesToActorEditContextAction,
             HandlerInsertPosition.After,
             SetProvidedEditContexts);
