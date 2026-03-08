@@ -1,133 +1,143 @@
-<!-- omit from toc -->
-# Tenekon.FluentValidation.Extensions [![Starts](https://img.shields.io/github/stars/tenekon/Tenekon.FluentValidation.Extensions)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions/stargazers) [![License](https://img.shields.io/github/license/tenekon/Tenekon.FluentValidation.Extensions)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions/blob/main/LICENSE) [![Activity](https://img.shields.io/github/last-commit/tenekon/Tenekon.FluentValidation.Extensions)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions/commits/main/) [![Discord](https://img.shields.io/discord/1288602831095468157?label=tenekon%20community)](https://discord.gg/VCa8ePSAqD)
+# Tenekon.FluentValidation.Extensions.AspNetCore.Components
 
-> :construction: This is a **new** project. You are very welcome to participate in this project, help shape the public API and share ideas. The project is currently in _alpha_ state, so the public API may change significantly.
+[![NuGet](https://img.shields.io/nuget/v/Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://www.nuget.org/packages/Tenekon.FluentValidation.Extensions.AspNetCore.Components)
+[![License](https://img.shields.io/github/license/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components/blob/main/LICENSE)
+[![Activity](https://img.shields.io/github/last-commit/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components/commits/main/)
+[![Stars](https://img.shields.io/github/stars/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://github.com/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components/stargazers)
+[![Discord](https://img.shields.io/discord/1288602831095468157?label=tenekon%20community)](https://discord.gg/VCa8ePSAqD)
 
-<!-- omit from toc -->
-## Table of Contents
+Scoped, nestable FluentValidation for Blazor forms. Use it to validate the form root, a nested model, or a routed region of a form without giving up Blazor's `EditContext` flow.
 
-- [Packages](#packages)
-  - [`Tenekon.FluentValidation.Extensions.AspNetCore.Components`](#tenekonfluentvalidationextensionsaspnetcorecomponents)
-  - [Features](#features)
-  - [Quickstart](#quickstart)
-  - [Documentation \& Resources](#documentation--resources)
-  - [Target Framework](#target-framework)
-  - [Dependencies](#dependencies)
-- [Development](#development)
-- [License](#license)
+> [!NOTE]
+> Status: `1.0-alpha`. The public API is still evolving.
 
-## Packages
+> [!NOTE]
+> Repository rename: this repository used to be called `Tenekon.FluentValidation.Extensions`. It was renamed to `Tenekon.FluentValidation.Extensions.AspNetCore.Components` to match the single package it ships.
 
-| Package Description                                                                                                                                                                                                                                                                                                                                        |                                         |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| [`Tenekon.FluentValidation.Extensions.AspNetCore.Components`](https://www.nuget.org/packages/Tenekon.FluentValidation.Extensions.AspNetCore.Components)<br/>[![NuGet](https://img.shields.io/nuget/v/Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://www.nuget.org/packages/Tenekon.FluentValidation.Extensions.AspNetCore.Components) | Blazor integration for FluentValidation |
+## Why This Package
 
-### `Tenekon.FluentValidation.Extensions.AspNetCore.Components`
+Blazor's built-in validation flow is centered around a single `EditContext`, but real forms often split into nested components, repeating items, and scoped sub-regions.
 
-An extension to integrate [FluentValidation](https://fluentvalidation.net/) with ASP.NET Core Components (Blazor Components). This
-library enhances component-level validation in Blazor applications using FluentValidation.
+This package lets you:
 
-> :open_book: For usage examples, see the [Validator Components Cookbook](src/Tenekon.FluentValidation.Extensions.AspNetCore.Components/COOKBOOK.md) covering common and advanced scenarios.
+- validate the whole form with FluentValidation
+- attach validators to nested models and collection items
+- keep nested validators connected to the parent form lifecycle
+- limit validation to selected branches of the model when needed
 
----
+## Installation
 
-### Features
-
-- :sun_with_face: **Seamless integration with Blazor forms**<sup>1</sup>
-- :jigsaw: **Validate not only top-level anymore** – just wrap each edit model part by a validator component<sup>2,4</sup>
-- :jigsaw: **Nestable edit model validators** – nested child validator components<sup>2</sup> still hook into the validation of the main form<sup>3</sup>.
-- :electric_plug: **Component-region validation** — plug validators<sup>2</sup> into forms or any part of a form or any nested region or subregion.<sup>3</sup>
-
-<small><sup>1</sup>: Any form that provides a cascaded `EditContext`, even a plain `CascadedValue Value="new EditContext(..)">..</CascadedValue>` is sufficient.</small><br/>
-<small><sup>2</sup>: Refers to the usage of validator components of this library.</small><br/>
-<small><sup>3</sup>: Nested child edit model validators automatically receive the nearest `EditContext`, captured by the first validator component<sup>2</sup> higher in the hierarchy (usually from a form<sup>1</sup>).</small><br/>
-<small><sup>4</sup>: `EditModelValidatorSubpath` and `EditModelScope` have the capability to create an isolated `EditContxt` wired to the nearest `EditContext`<sup>3</sup>.
-
-### Quickstart
-
-**1\. Install the NuGet package:** [![NuGet](https://img.shields.io/nuget/v/Tenekon.FluentValidation.Extensions.AspNetCore.Components?label=Tenekon.FluentValidation.Extensions.AspNetCore.Components)](https://www.nuget.org/packages/Tenekon.FluentValidation.Extensions.AspNetCore.Components)
+Install the package:
 
 ```bash
 dotnet add package Tenekon.FluentValidation.Extensions.AspNetCore.Components
 ```
 
-**2\. Define your validator** using `FluentValidation`:
+If you want to resolve validators from dependency injection by using `ValidatorType`, also install:
+
+```bash
+dotnet add package FluentValidation.DependencyInjectionExtensions
+```
+
+If you prefer, you can skip the DI extensions package and pass a validator instance through the `Validator` parameter instead.
+
+## Quickstart
+
+### 1. Register your validators
 
 ```csharp
-public class ModelValidator : AbstractValidator<MyModel>
+using FluentValidation;
+
+builder.Services.AddValidatorsFromAssemblyContaining<PersonValidator>();
+```
+
+### 2. Create a model and validator
+
+```csharp
+using FluentValidation;
+
+public sealed class Person
 {
-    public ModelValidator()
+    public string? Name { get; set; }
+}
+
+public sealed class PersonValidator : AbstractValidator<Person>
+{
+    public PersonValidator()
     {
         RuleFor(x => x.Name).NotEmpty();
     }
 }
 ```
 
-> Requires `FluentValidation` package to be installed.
+### 3. Use `EditModelValidatorRootpath` inside your form
 
-**3\. Register the validator** in your DI container:
-
-```csharp
-builder.Services.AddValidatorsFromAssemblyContaining<ModelValidator>();
-```
-
-> Requires `FluentValidation.DependencyInjectionExtensions` package to be installed.
-
-**4\. Use the validator component(s) in your Blazor form**:
+Add the package namespace to `_Imports.razor` or directly in the component:
 
 ```razor
-@code {
-    private Model _model = new Model {
-        Name = default(string)
-        Children = (List<SubModel>)[
-            new SubModel {
-                Name = default(string)
-            }
-        ]
-    };
-}
-<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
-    <EditModelValidatorRootpath ValidatorType="typeof(ModelValidator)" />
-    <InputText @bind-Value="_model.Name" />
-    <ValidationMessage For="() => _model.Name" />
-    @foreach(var child in _model.Children) {
-        <EditModelValidatorSubpath Model="child" ValidatorType="typeof(SubModelValidator)">
-            <InputText @bind-Value="child.Name"/>
-            <ValidationMessage For="() => child.Name"/>
-            <!-- Also triggers whole form submission — just for demonstration purposes -->
-            <button type="submit">Prematurely Submit</button>
-        </EditModelValidatorSubpath>
-    }
-    <button type="submit">Submit</button>
-</EditForm>
+@using Microsoft.AspNetCore.Components.Forms
+@using Tenekon.FluentValidation.Extensions.AspNetCore.Components
 ```
 
-### Documentation & Resources
+Then wire the validator into your `EditForm`:
 
-- :open_book: **Cookbook**: [Validator Components Cookbook](src/Tenekon.FluentValidation.Extensions.AspNetCore.Components/COOKBOOK.md) —
-  Examples & use cases for all common and advanced scenarios.
-- :bricks: **Architecture** [Validator Components Architecture](src/Tenekon.FluentValidation.Extensions.AspNetCore.Components/ARCHITECTURE.md) — Architectural approach of the components, and their integration with Blazor's EditContext.
-- :microscope: **Flow Logic**: [Validator Components Flow Logic](src/Tenekon.FluentValidation.Extensions.AspNetCore.Components/FLOWLOGIC.md) — Visual guide to
-  how edit model validators interact with each other and Blazor's `EditContext`.
+```razor
+<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+    <EditModelValidatorRootpath ValidatorType="typeof(PersonValidator)" />
 
-### Target Framework
+    <label for="name">Name</label>
+    <InputText id="name" @bind-Value="_model.Name" />
+    <ValidationMessage For="() => _model.Name" />
 
-* `.NET 8.0`
+    <button type="submit">Save</button>
+</EditForm>
 
-### Dependencies
+@code {
+    private readonly Person _model = new();
 
-* `FluentValidation` 12.x
-* `Microsoft.AspNetCore.Components.Forms` 8.x
-* `FastExpressionCompiler` 5.x
+    private Task HandleValidSubmit()
+    {
+        return Task.CompletedTask;
+    }
+}
+```
+
+If you want to bypass DI, use `Validator="new PersonValidator()"` instead of `ValidatorType="typeof(PersonValidator)"`.
+
+## Which Component Should I Use?
+
+| Component                    | Use it when                                                                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EditModelValidatorRootpath` | You want to validate the main model of the current form or cascaded `EditContext`.                                                             |
+| `EditModelValidatorSubpath`  | You want to validate a nested object or a repeated item inside the main model.                                                                 |
+| `EditModelValidatorRoutes`   | You want a validator to act only on selected branches of the model. Use it inside `EditModelValidatorRootpath` or `EditModelValidatorSubpath`. |
+| `EditModelScope`             | You want to create a scoped validation region with its own `EditContext` behavior.                                                             |
+
+For worked examples of all four components, see the [Validator Components Cookbook](docs/COOKBOOK.md).
+
+## Compatibility And Dependencies
+
+- Target frameworks: `net8.0`, `net9.0`, `net10.0`
+- FluentValidation: `12.x`
+- Blazor forms integration: the package selects the matching `Microsoft.AspNetCore.Components.Forms` version for each target framework
+- Internal dependency: `FastExpressionCompiler` `5.x`
+
+## Documentation
+
+- [Cookbook](docs/COOKBOOK.md): start here for usage patterns and copyable scenarios.
+- [Architecture](docs/ARCHITECTURE.md): read this when you want the mental model behind root, subpath, routes, and scope behavior.
+- [Motivation](docs/MOTIVATION.md): read this when you want the design rationale and why the package is split into rootpath, subpath, routes, and scope.
 
 ## Development
 
 ```bash
-git clone https://github.com/tenekon/Tenekon.FluentValidation.Extensions.git
-cd Tenekon.FluentValidation.Extensions
-dotnet build
+git clone https://github.com/tenekon/Tenekon.FluentValidation.Extensions.AspNetCore.Components.git
+cd Tenekon.FluentValidation.Extensions.AspNetCore.Components
+dotnet test
 ```
+
+Questions, feedback, and design discussion are welcome in the [Tenekon Community Discord](https://discord.gg/VCa8ePSAqD).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
