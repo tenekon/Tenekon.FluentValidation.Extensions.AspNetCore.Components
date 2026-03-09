@@ -9,7 +9,7 @@
 Scoped, nestable FluentValidation for Blazor forms. Use it to validate the form root, a nested model, or a routed region of a form without giving up Blazor's `EditContext` flow.
 
 > [!NOTE]
-> Status: `1.0-alpha`. The public API is still evolving.
+> Status: `1.0-alpha`. The public API is intended to be stable, but changes may occur as the library matures.
 
 > [!NOTE]
 > Repository rename: this repository used to be called `Tenekon.FluentValidation.Extensions`. It was renamed to `Tenekon.FluentValidation.Extensions.AspNetCore.Components` to match the single package it ships.
